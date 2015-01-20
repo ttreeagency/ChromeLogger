@@ -126,12 +126,15 @@ class ChromeConsoleBackend extends AbstractBackend {
 
 		$this->chromeLoggerService->group($output);
 		$this->chromeLoggerService->$method($message);
+		$classNameWithMethod = '';
 		if ($className) {
-			$this->chromeLoggerService->log($className);
+			$classNameWithMethod .= $className;
 		}
 		if ($methodName) {
-			$this->chromeLoggerService->log($methodName);
+			$classNameWithMethod .= '::' . $methodName . '()';
 		}
+		if ($classNameWithMethod !== '')
+			$this->chromeLoggerService->log($classNameWithMethod);
 		if ($additionalData) {
 			$this->chromeLoggerService->log($additionalData);
 		}
