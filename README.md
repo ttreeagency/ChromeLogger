@@ -3,6 +3,8 @@ A TYPO3 Flow Logger Backend to send log the the Chrome Console
 
 The Logger Backend can display your application in the Chrome Console, with the extension "Chrome Logger".
 
+![Sample image based on the TYPO3 Neos Demo Site](https://dl.dropboxusercontent.com/s/s41213dfjnscsu5/2015-01-20%20at%2019.33%202x.png?dl=0)
+
 How to use it ?
 ---------------
 
