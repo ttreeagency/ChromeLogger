@@ -137,19 +137,6 @@ class ChromeLoggerService {
 	protected $initialized = FALSE;
 
 	/**
-	 * @param Request $request
-	 * @param Response $response
-	 */
-	public function __construct(Request $request, Response $response) {
-		$this->request = $request;
-		$this->response = $response;
-
-		$this->_php_version = phpversion();
-		$this->_timestamp = $this->_php_version >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
-		$this->_json['request_uri'] = (string)$request->getUri();
-	}
-
-	/**
 	 * Initilize Logger
 	 */
 	public function initializeLogger() {
@@ -163,6 +150,9 @@ class ChromeLoggerService {
 			if ($requestHandler instanceof HttpRequestHandlerInterface) {
 				$this->request = $requestHandler->getHttpRequest();
 				$this->response = $requestHandler->getHttpResponse();
+				$this->json['request_uri'] = (string)$this->request->getUri();
+				$this->phpVersion = phpversion();
+				$this->timestamp = $this->phpVersion >= 5.1 ? $_SERVER['REQUEST_TIME'] : time();
 				$this->initialized = TRUE;
 			}
 		}
