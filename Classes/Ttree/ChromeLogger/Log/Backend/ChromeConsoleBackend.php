@@ -97,8 +97,16 @@ class ChromeConsoleBackend extends AbstractBackend {
 		if (!$this->enabled) {
 			return;
 		}
+		if (function_exists('posix_getpid')) {
+			$processId = ' ' . posix_getpid();
+		} else {
+			$processId = ' ';
+		}
+		$ipAddress = ($this->logIpAddress === TRUE) ? str_pad((isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''), 15) : '';
+		$severityLabel = (isset($this->severityLabels[$severity])) ? $this->severityLabels[$severity] : 'UNKNOWN  ';
+		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . str_pad($packageKey, 20) . "\n" . $message;
 		$method = $this->severityLabels[$severity];
-		$this->chromeLoggerService->$method($message);
+		$this->chromeLoggerService->$method($output);
 	}
 
 	/**
