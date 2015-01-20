@@ -35,6 +35,12 @@ class ChromeConsoleBackend extends AbstractBackend {
 	/**
 	 * @var array
 	 */
+	protected $severityMapping = array();
+
+
+	/**
+	 * @var array
+	 */
 	protected $severityLabels = array();
 
 	/**
@@ -50,7 +56,7 @@ class ChromeConsoleBackend extends AbstractBackend {
 	 * @api
 	 */
 	public function open() {
-		$this->severityLabels = array(
+		$this->severityMapping = array(
 			LOG_EMERG   => 'error',
 			LOG_ALERT   => 'error',
 			LOG_CRIT    => 'error',
@@ -58,7 +64,18 @@ class ChromeConsoleBackend extends AbstractBackend {
 			LOG_WARNING => 'warn',
 			LOG_NOTICE  => 'info',
 			LOG_INFO    => 'info',
-			LOG_DEBUG   => 'log',
+			LOG_DEBUG   => 'log'
+		);
+
+		$this->severityLabels = array(
+			LOG_EMERG   => 'EMERGENCY',
+			LOG_ALERT   => 'ALERT',
+			LOG_CRIT    => 'CRITICAL',
+			LOG_ERR     => 'ERROR',
+			LOG_WARNING => 'WARNING',
+			LOG_NOTICE  => 'NOTICE',
+			LOG_INFO    => 'INFO',
+			LOG_DEBUG   => 'DEBUG'
 		);
 	}
 
@@ -103,10 +120,22 @@ class ChromeConsoleBackend extends AbstractBackend {
 			$processId = ' ';
 		}
 		$ipAddress = ($this->logIpAddress === TRUE) ? str_pad((isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''), 15) : '';
-		$severityLabel = (isset($this->severityLabels[$severity])) ? $this->severityLabels[$severity] : 'UNKNOWN  ';
-		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . $packageKey . ' ' . $message;
-		$method = $this->severityLabels[$severity];
-		$this->chromeLoggerService->$method($output);
+		$severityLabel = (isset($this->severityLabels[$severity])) ? $this->severityLabels[$severity] : 'UNKNOWN';
+		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . $packageKey;
+		$method = $this->severityMapping[$severity];
+
+		$this->chromeLoggerService->group($output);
+		$this->chromeLoggerService->$method($message);
+		if ($className) {
+			$this->chromeLoggerService->log($className);
+		}
+		if ($methodName) {
+			$this->chromeLoggerService->log($methodName);
+		}
+		if ($additionalData) {
+			$this->chromeLoggerService->log($additionalData);
+		}
+		$this->chromeLoggerService->groupEnd();
 	}
 
 	/**

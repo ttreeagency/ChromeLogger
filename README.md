@@ -30,7 +30,16 @@ TYPO3:
             severityThreshold: '%LOG_CRIT%'
 ```
 
-You can inject the ```ChomeLoggerServive``` in your own class. Check the follwing code for some example:
+By default the package use a grouped output to show log on mulitple lines:
+
+![Default Output](https://dl.dropboxusercontent.com/s/hzct8864ch943k2/2015-01-20%20at%2023.05%202x.png?dl=0)
+
+Use it in your own package
+--------------------------
+
+You can use the default system logger provided by Flow, but you can also inject the ```ChomeLoggerServive``` in your own class. 
+
+Check the following code for some example:
 
 ```php
 $this->chromeLoggerInstance->log('Foo');
