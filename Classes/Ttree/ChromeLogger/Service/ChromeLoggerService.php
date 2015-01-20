@@ -17,7 +17,6 @@ use TYPO3\Flow\Http\HttpRequestHandlerInterface;
 use TYPO3\Flow\Http\Request;
 use TYPO3\Flow\Http\Response;
 use TYPO3\Flow\Object\ObjectManagerInterface;
-use TYPO3\Flow\Reflection\ReflectionService;
 
 /**
  * Server Side Chrome PHP logger class
@@ -139,12 +138,19 @@ class ChromeLoggerService {
 
 	/**
 	 * Initilize Logger
+	 *
+	 * The logger is disabled is the current context is different from Development
 	 */
 	public function initializeLogger() {
+
 		if ($this->initialized === TRUE) {
 			return TRUE;
 		}
 		if (Bootstrap::$staticObjectManager instanceof ObjectManagerInterface) {
+			$environment = Bootstrap::$staticObjectManager->get('TYPO3\Flow\Utility\Environment');
+			if (!$environment->getContext()->isDevelopment()) {
+				return FALSE;
+			}
 			$bootstrap = Bootstrap::$staticObjectManager->get('TYPO3\Flow\Core\Bootstrap');
 			/* @var Bootstrap $bootstrap */
 			$requestHandler = $bootstrap->getActiveRequestHandler();
