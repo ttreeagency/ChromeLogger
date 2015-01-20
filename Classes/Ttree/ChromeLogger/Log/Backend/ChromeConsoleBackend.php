@@ -104,7 +104,7 @@ class ChromeConsoleBackend extends AbstractBackend {
 		}
 		$ipAddress = ($this->logIpAddress === TRUE) ? str_pad((isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''), 15) : '';
 		$severityLabel = (isset($this->severityLabels[$severity])) ? $this->severityLabels[$severity] : 'UNKNOWN  ';
-		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . str_pad($packageKey, 20) . "\n" . $message;
+		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . $packageKey . " " . $message;
 		$method = $this->severityLabels[$severity];
 		$this->chromeLoggerService->$method($output);
 	}
