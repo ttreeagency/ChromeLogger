@@ -1,0 +1,13 @@
+{
+    "name": "ttree/chromelogger",
+    "type": "typo3-flow-package",
+    "description": "A TYPO3 Flow Logger Backend to send log the the Chrome Console",
+    "require": {
+        "typo3/flow": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Ttree\\ChromeLogger": "Classes"
+        }
+    }
+}
