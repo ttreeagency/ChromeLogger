@@ -72,7 +72,8 @@ class ChromeConsoleBackend extends AbstractBackend {
 					$this->chromeLoggerService = Bootstrap::$staticObjectManager->get('Ttree\ChromeLogger\Service\ChromeLoggerService');
 					$this->initialized = TRUE;
 				} catch (Exception $exception) {
-
+					// Skip exception if the object manager is unable to initialize the service
+					$this->initialized = FALSE;
 				}
 			}
 		}
@@ -103,7 +104,7 @@ class ChromeConsoleBackend extends AbstractBackend {
 		}
 		$ipAddress = ($this->logIpAddress === TRUE) ? str_pad((isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''), 15) : '';
 		$severityLabel = (isset($this->severityLabels[$severity])) ? $this->severityLabels[$severity] : 'UNKNOWN  ';
-		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . $packageKey . " " . $message;
+		$output = strftime('%y-%m-%d %H:%M:%S', time()) . $processId . ' ' . $ipAddress . strtoupper($severityLabel) . ' ' . $packageKey . ' ' . $message;
 		$method = $this->severityLabels[$severity];
 		$this->chromeLoggerService->$method($output);
 	}

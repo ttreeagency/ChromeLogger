@@ -17,6 +17,7 @@ use TYPO3\Flow\Http\HttpRequestHandlerInterface;
 use TYPO3\Flow\Http\Request;
 use TYPO3\Flow\Http\Response;
 use TYPO3\Flow\Object\ObjectManagerInterface;
+use TYPO3\Flow\Reflection\ReflectionService;
 
 /**
  * Server Side Chrome PHP logger class
@@ -83,17 +84,17 @@ class ChromeLoggerService {
 	/**
 	 * @var string
 	 */
-	protected $_php_version;
+	protected $phpVersion;
 
 	/**
 	 * @var int
 	 */
-	protected $_timestamp;
+	protected $timestamp;
 
 	/**
 	 * @var array
 	 */
-	protected $_json = array(
+	protected $json = array(
 		'version' => self::VERSION,
 		'columns' => array('log', 'backtrace', 'type'),
 		'rows' => array()
@@ -102,24 +103,24 @@ class ChromeLoggerService {
 	/**
 	 * @var array
 	 */
-	protected $_backtraces = array();
+	protected $backtraces = array();
 
 	/**
 	 * @var bool
 	 */
-	protected $_error_triggered = false;
+	protected $triggeredErrors = FALSE;
 
 	/**
 	 * @var array
 	 */
-	protected $_settings = array(
+	protected $settings = array(
 		self::BACKTRACE_LEVEL => 1
 	);
 
 	/**
 	 * @var array
 	 */
-	protected $_processed = array();
+	protected $processed = array();
 
 	/**
 	 * @var Request
@@ -260,14 +261,14 @@ class ChromeLoggerService {
 			return;
 		}
 
-		$this->_processed = array();
+		$this->processed = array();
 
 		$logs = array();
 		foreach ($args as $arg) {
 			$logs[] = $this->convertObject($arg);
 		}
 
-		$backtrace = debug_backtrace(false);
+		$backtrace = debug_backtrace(FALSE);
 		$level = $this->getSetting(self::BACKTRACE_LEVEL);
 
 		$backtrace_message = 'unknown';
@@ -285,29 +286,26 @@ class ChromeLoggerService {
 	 * @return array
 	 */
 	protected function convertObject($object) {
-		// if this isn't an object then just return it
 		if (!is_object($object)) {
 			return $object;
 		}
 
-		//Mark this object as processed so we don't convert it twice and it
-		//Also avoid recursion when objects refer to each other
-		$this->_processed[] = $object;
+		$this->processed[] = $object;
 
-		$object_as_array = array();
+		$objectAsArray = array();
 
 		// first add the class name
-		$object_as_array['___class_name'] = get_class($object);
+		$objectAsArray['___class_name'] = get_class($object);
 
 		// loop through object vars
-		$object_vars = get_object_vars($object);
-		foreach ($object_vars as $key => $value) {
+		$properties = get_object_vars($object);
+		foreach ($properties as $key => $value) {
 
 			// same instance as parent object
-			if ($value === $object || in_array($value, $this->_processed, true)) {
+			if ($value === $object || in_array($value, $this->processed, TRUE)) {
 				$value = 'recursion - parent object [' . get_class($value) . ']';
 			}
-			$object_as_array[$key] = $this->convertObject($value);
+			$objectAsArray[$key] = $this->convertObject($value);
 		}
 
 		$reflection = new \ReflectionClass($object);
@@ -316,13 +314,13 @@ class ChromeLoggerService {
 		foreach ($reflection->getProperties() as $property) {
 
 			// if one of these properties was already added above then ignore it
-			if (array_key_exists($property->getName(), $object_vars)) {
+			if (array_key_exists($property->getName(), $properties)) {
 				continue;
 			}
 			$type = $this->getObjectPropertyKey($property);
 
-			if ($this->_php_version >= 5.3) {
-				$property->setAccessible(true);
+			if ($this->phpVersion >= 5.3) {
+				$property->setAccessible(TRUE);
 			}
 
 			try {
@@ -332,13 +330,13 @@ class ChromeLoggerService {
 			}
 
 			// same instance as parent object
-			if ($value === $object || in_array($value, $this->_processed, true)) {
+			if ($value === $object || in_array($value, $this->processed, TRUE)) {
 				$value = 'recursion - parent object [' . get_class($value) . ']';
 			}
 
-			$object_as_array[$type] = $this->convertObject($value);
+			$objectAsArray[$type] = $this->convertObject($value);
 		}
-		return $object_as_array;
+		return $objectAsArray;
 	}
 
 	/**
@@ -368,29 +366,32 @@ class ChromeLoggerService {
 	 * @param string $type
 	 */
 	protected function addRowToDataArray(array $logs, $backtrace, $type) {
-		// if this is logged on the same line for example in a loop, set it to null to save space
-		if (in_array($backtrace, $this->_backtraces)) {
-			$backtrace = null;
+		// if this is logged on the same line for example in a loop, set it to NULL to save space
+		if (in_array($backtrace, $this->backtraces)) {
+			$backtrace = NULL;
 		}
 
 		// for group, groupEnd, and groupCollapsed
 		// take out the backtrace since it is not useful
 		if ($type == self::GROUP || $type == self::GROUP_END || $type == self::GROUP_COLLAPSED) {
-			$backtrace = null;
+			$backtrace = NULL;
 		}
 
-		if ($backtrace !== null) {
-			$this->_backtraces[] = $backtrace;
+		if ($backtrace !== NULL) {
+			$this->backtraces[] = $backtrace;
 		}
 
 		$row = array($logs, $backtrace, $type);
 
-		$this->_json['rows'][] = $row;
-		$this->appendLogToResponseHeader($this->_json);
+		$this->json['rows'][] = $row;
+		$this->appendLogToResponseHeader($this->json);
 	}
 
 	protected function appendLogToResponseHeader($data) {
-		$this->response->setHeader(self::HEADER_NAME, $this->encode($data));
+		$data = $this->encode($data);
+		if ($data !== NULL) {
+			$this->response->setHeader(self::HEADER_NAME, $data);
+		}
 	}
 
 	/**
@@ -400,7 +401,13 @@ class ChromeLoggerService {
 	 * @return string
 	 */
 	protected function encode($data) {
-		return base64_encode(utf8_encode(json_encode($data)));
+		$data = base64_encode(utf8_encode(json_encode($data)));
+		$length = strlen($data);
+		if(($length / 1024) > 256) {
+			return NULL;
+		}
+
+		return $data;
 	}
 
 	/**
@@ -411,7 +418,7 @@ class ChromeLoggerService {
 	 * @return void
 	 */
 	public function addSetting($key, $value) {
-		$this->_settings[$key] = $value;
+		$this->settings[$key] = $value;
 	}
 
 	/**
@@ -433,9 +440,9 @@ class ChromeLoggerService {
 	 * @return mixed
 	 */
 	public function getSetting($key) {
-		if (!isset($this->_settings[$key])) {
-			return null;
+		if (!isset($this->settings[$key])) {
+			return NULL;
 		}
-		return $this->_settings[$key];
+		return $this->settings[$key];
 	}
 }
