@@ -14,8 +14,9 @@ namespace Ttree\ChromeLogger\Log\Backend;
 use Ttree\ChromeLogger\Service\ChromeLoggerService;
 use TYPO3\Flow\Annotations as Flow;
 use TYPO3\Flow\Core\Bootstrap;
-use TYPO3\Flow\Http\HttpRequestHandlerInterface;
+use TYPO3\Flow\Exception;
 use TYPO3\Flow\Log\Backend\AbstractBackend;
+use TYPO3\Flow\Object\Exception\UnknownObjectException;
 use TYPO3\Flow\Object\ObjectManagerInterface;
 
 /**
@@ -32,14 +33,14 @@ class ChromeConsoleBackend extends AbstractBackend {
 	protected $chromeLoggerService;
 
 	/**
-	 * @var boolean
-	 */
-	protected $enabled = FALSE;
-
-	/**
 	 * @var array
 	 */
 	protected $severityLabels = array();
+
+	/**
+	 * @var boolean
+	 */
+	protected $initialized = FALSE;
 
 	/**
 	 * Carries out all actions necessary to prepare the logging backend, such as opening
@@ -67,17 +68,16 @@ class ChromeConsoleBackend extends AbstractBackend {
 	protected function initializeChromeLoggerService() {
 		if (!$this->chromeLoggerService instanceof ChromeLoggerService) {
 			if (Bootstrap::$staticObjectManager instanceof ObjectManagerInterface) {
-				$bootstrap = Bootstrap::$staticObjectManager->get('TYPO3\Flow\Core\Bootstrap');
-				/* @var Bootstrap $bootstrap */
-				$requestHandler = $bootstrap->getActiveRequestHandler();
-				if ($requestHandler instanceof HttpRequestHandlerInterface) {
-					$request = $requestHandler->getHttpRequest();
-					$response = $requestHandler->getHttpResponse();
-					$this->chromeLoggerService = new ChromeLoggerService($request, $response);
-					$this->enabled = TRUE;
+				try {
+					$this->chromeLoggerService = Bootstrap::$staticObjectManager->get('Ttree\ChromeLogger\Service\ChromeLoggerService');
+					$this->initialized = TRUE;
+				} catch (Exception $exception) {
+
 				}
 			}
 		}
+
+		return $this->initialized;
 	}
 
 	/**
@@ -93,8 +93,7 @@ class ChromeConsoleBackend extends AbstractBackend {
 	 * @api
 	 */
 	public function append($message, $severity = LOG_INFO, $additionalData = NULL, $packageKey = NULL, $className = NULL, $methodName = NULL) {
-		$this->initializeChromeLoggerService();
-		if (!$this->enabled) {
+		if (!$this->initializeChromeLoggerService()) {
 			return;
 		}
 		if (function_exists('posix_getpid')) {

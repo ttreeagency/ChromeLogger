@@ -12,8 +12,11 @@ namespace Ttree\ChromeLogger\Service;
  *                                                                        */
 
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Core\Bootstrap;
+use TYPO3\Flow\Http\HttpRequestHandlerInterface;
 use TYPO3\Flow\Http\Request;
 use TYPO3\Flow\Http\Response;
+use TYPO3\Flow\Object\ObjectManagerInterface;
 
 /**
  * Server Side Chrome PHP logger class
@@ -129,6 +132,11 @@ class ChromeLoggerService {
 	protected $response;
 
 	/**
+	 * @var boolean
+	 */
+	protected $initialized = FALSE;
+
+	/**
 	 * @param Request $request
 	 * @param Response $response
 	 */
@@ -142,9 +150,33 @@ class ChromeLoggerService {
 	}
 
 	/**
+	 * Initilize Logger
+	 */
+	public function initializeLogger() {
+		if ($this->initialized === TRUE) {
+			return TRUE;
+		}
+		if (Bootstrap::$staticObjectManager instanceof ObjectManagerInterface) {
+			$bootstrap = Bootstrap::$staticObjectManager->get('TYPO3\Flow\Core\Bootstrap');
+			/* @var Bootstrap $bootstrap */
+			$requestHandler = $bootstrap->getActiveRequestHandler();
+			if ($requestHandler instanceof HttpRequestHandlerInterface) {
+				$this->request = $requestHandler->getHttpRequest();
+				$this->response = $requestHandler->getHttpResponse();
+				$this->initialized = TRUE;
+			}
+		}
+
+		return $this->initialized;
+	}
+
+	/**
 	 * logs a variable to the console
 	 */
 	public function log() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage('', $args);
 	}
@@ -153,6 +185,9 @@ class ChromeLoggerService {
 	 * logs a warning to the console
 	 */
 	public function warn() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::LOG_WARN, $args);
 	}
@@ -161,6 +196,9 @@ class ChromeLoggerService {
 	 * logs an error to the console
 	 */
 	public function error() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::LOG_ERROR, $args);
 	}
@@ -169,6 +207,9 @@ class ChromeLoggerService {
 	 * sends a group log
 	 */
 	public function group() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::GROUP, $args);
 	}
@@ -177,6 +218,9 @@ class ChromeLoggerService {
 	 * sends an info log
 	 */
 	public function info() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::LOG_INFO, $args);
 	}
@@ -185,6 +229,9 @@ class ChromeLoggerService {
 	 * sends a collapsed group log
 	 */
 	public function groupCollapsed() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::GROUP_COLLAPSED, $args);
 	}
@@ -193,6 +240,9 @@ class ChromeLoggerService {
 	 * ends a group log
 	 */
 	public function groupEnd() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::GROUP_END, $args);
 	}
@@ -201,6 +251,9 @@ class ChromeLoggerService {
 	 * sends a table log
 	 */
 	public function table() {
+		if (!$this->initializeLogger()) {
+			return;
+		}
 		$args = func_get_args();
 		$this->buildLogMessage(self::TABLE, $args);
 	}
