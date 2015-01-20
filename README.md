@@ -30,14 +30,45 @@ TYPO3:
             severityThreshold: '%LOG_CRIT%'
 ```
 
+You can inject the ```ChomeLoggerServive``` in your own class. Check the follwing code for some example:
+
+```php
+$this->chromeLoggerInstance->log('Foo');
+$this->chromeLoggerInstance->info('Foo');
+$this->chromeLoggerInstance->warn('Foo');
+$this->chromeLoggerInstance->error('Foo');
+
+// You can group your log entry, groupCollapsed method for a more compact rendering
+$this->chromeLoggerInstance->group('String');
+$this->chromeLoggerInstance->log('Foo');
+$this->chromeLoggerInstance->log(array('Foo'));
+$this->chromeLoggerInstance->groupEnd();
+
+$this->chromeLoggerInstance->group('Table');
+$this->chromeLoggerInstance->table('Foo');
+$this->chromeLoggerInstance->table(array('Foo'));
+$this->chromeLoggerInstance->groupEnd();
+
+$this->chromeLoggerInstance->group('Object');
+$this->chromeLoggerInstance->log($this->request->getHttpRequest());
+$this->chromeLoggerInstance->log(new \DateTime());
+$this->chromeLoggerInstance->groupEnd();
+```
+
+**Warning**: HTTP Header are limited to 256kb, currently if you hit the limit, you wont see any logs in the console.
+
+![Sample image with more advanced log values](https://dl.dropboxusercontent.com/s/slscnvv0wqrryql/2015-01-20%20at%2021.36%202x.png?dl=0)
+
+
 TODO
 ----
 
 Feel free to open issue if you need a specific feature and better send a pull request. Here are some idea for future 
 improvements:
 
-* More complete log output
 * Support for exception and backtrace
+* Add support for Header compression (gzip) to mitigate the 256kb limit (need change in the Chrome extension too)
+* Better reflexion, maybe
 	
 Acknowledgments
 ---------------
